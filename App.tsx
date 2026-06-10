@@ -1,501 +1,280 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
+import { StudyMethod, Quest, BattleOpponent, BattleSport } from "../types";
 
-import React, { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "motion/react";
-import { Gamepad2, Volume2, Calendar, Link as LinkIcon, Compass, Star, BookOpen, Target, LogIn, CheckSquare, Plus, Clock, ShieldAlert, Sparkles, User, Zap, LayoutDashboard, X } from "lucide-react";
-
-// Sub Modules
-import LibraryMap from "./components/LibraryMap";
-import DeskStudyRoom from "./components/DeskStudyRoom";
-import AttendanceCheck from "./components/AttendanceCheck";
-import QuestsList from "./components/QuestsList";
-import StudyMethods from "./components/StudyMethods";
-import PlayBattle from "./components/PlayBattle";
-import KnowledgeBounty from "./components/KnowledgeBounty";
-import LoginScreen from "./components/LoginScreen";
-import AiPlanner from "./components/AiPlanner";
-
-export default function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
-    return localStorage.getItem("metique_logged_in") === "true";
-  });
-  const [userName, setUserName] = useState<string>(() => {
-    return localStorage.getItem("metique_username") || "";
-  });
-
-  // Global User State
-  const [currentPoints, setCurrentPoints] = useState<number>(() => {
-    const saved = localStorage.getItem("metique_study_points");
-    return saved ? parseInt(saved, 10) : 120;
-  });
-  const [accumulateTimeSec, setAccumulateTimeSec] = useState<number>(() => {
-    const saved = localStorage.getItem("metique_accum_time_sec");
-    return saved ? parseInt(saved, 10) : 0;
-  });
-
-  // Subject-specific study durations in seconds
-  const [studyTimes, setStudyTimes] = useState<Record<string, number>>(() => {
-    const saved = localStorage.getItem("metique_subject_study_times");
-    return saved ? JSON.parse(saved) : {
-      math: 0,
-      english: 0,
-      korean: 0,
-      social: 0,
-      science: 0,
-      general: 0
-    };
-  });
-
-  useEffect(() => {
-    localStorage.setItem("metique_subject_study_times", JSON.stringify(studyTimes));
-  }, [studyTimes]);
+export const RECOMMENDED_METHODS: StudyMethod[] = [
+  // 공통 (공부법창)
+  {
+    id: "pomodoro",
+    title: "뽀모도로 공부법",
+    timeInfo: "25분 공부 + 5분 휴식",
+    pros: "주의집중력이 짧아 오래 공부를 못 하거나 쉽게 딴짓하는 학생에게 최적!",
+    steps: [
+      "1. 25분 동안 휴대폰을 무음으로 끄고 오직 눈앞의 책 한 권에 집중합니다.",
+      "2. 25분이 끝나면 5분 동안 자리에서 일어지 않고 스트레칭이나 물을 마십니다.",
+      "3. 이것을 1세트로 하여 총 4세트를 완료한 후 20~30분의 깊은 휴식을 가집니다."
+    ],
+    emoji: "⏳",
+    tags: ["초보자추천", "딴짓방지", "집중력부스트"],
+    category: "common"
+  },
+  {
+    id: "feynman",
+    title: "파인만 공부법 (설명하기)",
+    timeInfo: "20분 정리 + 10분 가상 강의",
+    pros: "개념은 아는 것 같은데 시험 문제를 풀면 한계를 마주하는 학생에게 최적!",
+    steps: [
+      "1. 오늘 복습할 주제를 정하고 흰 종이(백지)에 요점만 쓱 적어봅니다.",
+      "2. 초등학생 동생에게 설명하듯 전문 용어를 지양하고 가장 쉬운 비유로 소리 내어 강의해 봅니다.",
+      "3. 도중에 막히거나 설명이 불완전했던 부분을 교과서에서 다시 찾아 빈틈을 보완합니다."
+    ],
+    emoji: "🎙️",
+    tags: ["완벽암기", "메타인지", "심층이해"],
+    category: "common"
+  },
+  {
+    id: "blank_review",
+    title: "백지 복습법 (인출 단련)",
+    timeInfo: "40분 개념공부 + 10분 백지 인출",
+    pros: "단순히 읽기만 하느라 본인이 이 내용을 외웠다고 착각하는 문제를 예방합니다.",
+    steps: [
+      "1. 교과서나 공책 필기를 한 단원 동안 쭉 열독하여 머릿속에 담습니다.",
+      "2. 모든 필기도구를 접어두고 크고 빈 도화지에 아는 내용 전부를 직접 가지치기하듯 써 내려갑니다.",
+      "3. 검은 펜으로 쓴 내용과 교과서를 비교하여 빠뜨린 부분을 빨간 펜으로 보완 채워 넣습니다."
+    ],
+    emoji: "📝",
+    tags: ["시험대비", "완전학습", "단기기억강화"],
+    category: "common"
+  },
+  {
+    id: "cornell",
+    title: "코넬 노트 필기법 (지식 구조화 및 메타인지형)",
+    timeInfo: "수업 후 15분 이내 정리",
+    pros: "필기는 열심히 하는데 정작 시험공부 할 때 뭘 공부해야 할지 모르는 학생용!",
+    steps: [
+      "1. 필기 영역: 수업 중 핵심 필기나 공식을 구조적으로 가득 적어둡니다.",
+      "2. 단서 영역(좌측): 수업 직후 핵심 내용에 대한 대표 질문이나 키워드를 요약합니다.",
+      "3. 요약 영역(하단): 페이지 마지막 줄에 3~4문장으로 나만의 어조로 최종 핵심을 요약합니다."
+    ],
+    emoji: "📒",
+    tags: ["구조화공부", "노트필기왕", "장기기억화"],
+    category: "common"
+  },
+  {
+    id: "leitner",
+    title: "라이트너 박스 시스템 (누적 복습 및 암기 시스템형)",
+    timeInfo: "주기적 반복 학습",
+    pros: "외워도 자꾸 까먹는 단어나 개념을 장기 기억으로 확실하게 넘기고 싶은 학생에게 최적!",
+    steps: [
+      "1. 암기할 플래시카드를 여러 개 만들고 '1번 상자(매일 복습)'에 모두 넣습니다.",
+      "2. 정답을 맞춘 카드는 다음 번호의 상자(예: 3일 후 복습)로 이동시킵니다.",
+      "3. 틀린 카드는 무조건 다시 1번 상자로 돌려보냅니다."
+    ],
+    emoji: "🗃️",
+    tags: ["누적복습", "플래시카드", "망각곡선"],
+    category: "common"
+  },
+  {
+    id: "ultradian",
+    title: "울트라디안 리듬 학습법 (시간 및 생체 리듬 관리형)",
+    timeInfo: "90분 몰입 + 20분 회복",
+    pros: "뽀모도로(25분)로는 몰입이 깨지는 고학년이나 장시간 몰입이 필요한 학생에게 최적!",
+    steps: [
+      "1. 인간의 생체 리듬인 90분에 맞춰 타이머를 설정하고 완전히 몰입합니다.",
+      "2. 90분이 끝나면 반드시 20분 동안 뇌를 쉬게 합니다 (산책, 명상 등 딴짓 금지).",
+      "3. 한 사이클(110분)을 마치고 다음 사이클을 시작하여 하루 리듬을 유지합니다."
+    ],
+    emoji: "🌊",
+    tags: ["생체리듬관리", "딥워크", "몰입력극대화"],
+    category: "common"
+  },
   
-  // Navigation active tab
-  // "map" (default metaverse) | "attendance" | "quests" | "methods" | "battle" | "planner"
-  const [activeTab, setActiveTab] = useState<"map" | "attendance" | "quests" | "methods" | "battle" | "bounty" | "planner">("map");
-  const [showNavMenu, setShowNavMenu] = useState(false);
-
-  // Sit Down / Desk study room states
-  const [seatedRoomId, setSeatedRoomId] = useState<string | null>(null);
-  const [isSecretRoom, setIsSecretRoom] = useState<boolean>(false);
-
-  // New productive student elements (To-Do & Goals)
-  const [targetStudyMinutes, setTargetStudyMinutes] = useState<number>(() => {
-    const saved = localStorage.getItem("metique_target_minutes");
-    return saved ? parseInt(saved, 10) : 30; // 30 minutes target by default
-  });
-
-  const [bonusClaimed, setBonusClaimed] = useState<boolean>(() => {
-    return localStorage.getItem("metique_bonus_claimed") === "true";
-  });
-
-  // Daily reset checker at exactly 00:00 midnight (or date change) - keeping it ultra robust!
-  useEffect(() => {
-    const checkMidnightAndReset = () => {
-      const now = new Date();
-      const lastResetDate = localStorage.getItem("metique_last_reset_date");
-      const todayString = now.toLocaleDateString("ko-KR");
-
-      if (lastResetDate && lastResetDate !== todayString) {
-        // Carry out 100% clean reset for the new day
-        setAccumulateTimeSec(0);
-        setBonusClaimed(false);
-        setStudyTimes({
-          math: 0,
-          english: 0,
-          korean: 0,
-          social: 0,
-          science: 0,
-          general: 0
-        });
-        
-        localStorage.setItem("metique_accum_time_sec", "0");
-        localStorage.setItem("metique_subject_study_times", JSON.stringify({
-          math: 0,
-          english: 0,
-          korean: 0,
-          social: 0,
-          science: 0,
-          general: 0
-        }));
-        localStorage.removeItem("metique_bonus_claimed");
-        
-        // Check if attendance needs to be reset due to skipped day
-        const lastAttendanceDate = localStorage.getItem("metique_last_attendance_date");
-        if (lastAttendanceDate) {
-          const parts = lastAttendanceDate.split('.').map(s => parseInt(s.trim()));
-          if (parts.length >= 3 && !isNaN(parts[0]) && !isNaN(parts[1]) && !isNaN(parts[2])) {
-            const lastDateObj = new Date(parts[0], parts[1] - 1, parts[2]);
-            const yesterday = new Date();
-            yesterday.setDate(yesterday.getDate() - 1);
-            
-            const lastDateStr = lastDateObj.toLocaleDateString("ko-KR");
-            const yesterdayStr = yesterday.toLocaleDateString("ko-KR");
-            
-            if (lastDateStr !== yesterdayStr && lastDateStr !== todayString) {
-              // Missed a day! Reset streak!
-              localStorage.setItem("metique_attendance_streak", "0");
-              localStorage.setItem("metique_attendance_stamps", JSON.stringify(Array(30).fill(false)));
-            }
-          }
-        }
-
-
-        localStorage.setItem("metique_last_reset_date", todayString);
-        alert("🌅 00:00 가 되어 새로운 공부 하루가 밝았습니다! 공부 과제 및 누적 타이머가 리셋되었습니다.");
-      } else if (!lastResetDate) {
-        localStorage.setItem("metique_last_reset_date", todayString);
-      }
-    };
-
-    checkMidnightAndReset();
-    const intervalId = setInterval(checkMidnightAndReset, 1000);
-    return () => clearInterval(intervalId);
-  }, []);
-
-  // State sync on update
-  useEffect(() => {
-    localStorage.setItem("metique_study_points", String(currentPoints));
-  }, [currentPoints]);
-
-  useEffect(() => {
-    localStorage.setItem("metique_accum_time_sec", String(accumulateTimeSec));
-    
-    // Check target milestone study time (accumulateTimeSec / 60 >= targetStudyMinutes)
-    const currentMins = accumulateTimeSec / 60;
-    if (currentMins >= targetStudyMinutes && !bonusClaimed && targetStudyMinutes > 0) {
-      setBonusClaimed(true);
-      localStorage.setItem("metique_bonus_claimed", "true");
-      setCurrentPoints((prev) => prev + 50);
-      
-      // Synthesize achievement chime directly in the browser!
-      triggerMilestoneSound();
-      alert(`🎯 축하합니다! 오늘의 공부 목표 ${targetStudyMinutes}분을 달성하셨습니다! +50 pts 보너스가 지급되었습니다.`);
-    }
-  }, [accumulateTimeSec, targetStudyMinutes, bonusClaimed]);
-
-  useEffect(() => {
-    localStorage.setItem("metique_target_minutes", String(targetStudyMinutes));
-    // Reset bonus claim state only if time is below target
-    if (accumulateTimeSec / 60 < targetStudyMinutes) {
-      setBonusClaimed(false);
-      localStorage.removeItem("metique_bonus_claimed");
-    }
-  }, [targetStudyMinutes]);
-
-  // Client Web Audio synthesis of success chime
-  const triggerMilestoneSound = () => {
-    try {
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-      if (!AudioContextClass) return;
-      const ctx = new AudioContextClass();
-      
-      const playTone = (freq: number, start: number, duration: number) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        
-        osc.type = "sine";
-        osc.frequency.setValueAtTime(freq, ctx.currentTime + start);
-        gain.gain.setValueAtTime(0.15, ctx.currentTime + start);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + start + duration);
-        osc.start(ctx.currentTime + start);
-        osc.stop(ctx.currentTime + start + duration);
-      };
-
-      // Sound scale "C5 - E5 - G5"
-      playTone(523.25, 0.0, 0.35); // C5
-      playTone(659.25, 0.15, 0.35); // E5
-      playTone(783.99, 0.3, 0.5); // G5
-    } catch (_) {}
-  };
-
-  // Score points handling
-  const addPoints = (points: number) => {
-    setCurrentPoints((prev) => prev + points);
-  };
-
-  const deductPoints = (points: number) => {
-    setCurrentPoints((prev) => Math.max(prev - points, 0));
-  };
-
-  // When player decides to seat down in the main field grid
-  const handleSitDown = (roomId: string, isSecret: boolean) => {
-    setSeatedRoomId(roomId);
-    setIsSecretRoom(isSecret);
-  };
-
-  // Exit study desk room and stand up in the map
-  const handleStandUpAndExit = () => {
-    if (isSecretRoom && seatedRoomId) {
-      localStorage.removeItem(`metique_secret_code_${seatedRoomId}`);
-    }
-    setSeatedRoomId(null);
-    setIsSecretRoom(false);
-    setActiveTab("map"); // Return to map tab
-  };
-
-  const handleLogin = (name: string) => {
-    localStorage.setItem("metique_logged_in", "true");
-    localStorage.setItem("metique_username", name);
-    setUserName(name);
-    setIsLoggedIn(true);
-  };
-
-  // Navigation auto exit desk room if tab is switched manually to avoid state confusion
-  const handleTabSwitch = (tab: typeof activeTab) => {
-    if (seatedRoomId) {
-      const confirmStandUp = window.confirm("공부 책상에서 일어나 다른 탭으로 이동하시겠습니까? (공부 시간이 리셋되지 않고 유지됩니다)");
-      if (!confirmStandUp) return;
-      if (isSecretRoom && seatedRoomId) {
-        localStorage.removeItem(`metique_secret_code_${seatedRoomId}`);
-      }
-      setSeatedRoomId(null);
-      setIsSecretRoom(false);
-    }
-    setActiveTab(tab);
-  };
-
-  // Math helper
-  const totalMins = Math.floor(accumulateTimeSec / 60);
-  const totalSecs = accumulateTimeSec % 60;
-  const targetPercent = Math.min(Math.round((totalMins / targetStudyMinutes) * 100), 100);
-
-  if (!isLoggedIn) {
-    return <LoginScreen onLogin={handleLogin} />;
+  // 국어
+  {
+    id: "korean_3_step",
+    title: "3단계 독해법 (구조적 독해)",
+    timeInfo: "지문당 10~15분 소요",
+    pros: "글의 핵심을 못 잡거나 비문학 지문을 읽고 나서 머리에 남는 게 없는 학생에게 최적!",
+    steps: [
+      "1. 구조 파악: 문단별 첫 문장과 마지막 문장을 읽고 전체 글의 구조(예: 대조, 원인-결과)를 파악합니다.",
+      "2. 핵심어 찾기: 각 문단에서 가장 중요한 단어 1~2개에 동그라미를 칩니다.",
+      "3. 요약하기: 지문을 다 읽은 후, 보지 않고 한 문장으로 주제를 요약해 봅니다."
+    ],
+    emoji: "📖",
+    tags: ["비문학", "독해력", "주제요약"],
+    category: "korean"
+  },
+  
+  // 영어
+  {
+    id: "english_shadowing",
+    title: "구문 쉐도잉 (직독직해)",
+    timeInfo: "매일 30분 반복",
+    pros: "단어는 아는데 문장이 길어지면 해석이 안 되는 학생에게 최적!",
+    steps: [
+      "1. 구문 분석: 복잡한 문장의 주어, 동사, 목적어, 수식어를 끊어 읽기(/) 표시합니다.",
+      "2. 직독직해: 한국어 어순으로 예쁘게 의역하지 말고, 영어 어순 그대로 앞에서부터 해석합니다.",
+      "3. 쉐도잉: 원어민 음성을 들으며 그림자처럼 바로 따라 읽으며 의미를 뇌에 새깁니다."
+    ],
+    emoji: "🗣️",
+    tags: ["구문독해", "직독직해", "영감기르기"],
+    category: "english"
+  },
+  
+  // 수학
+  {
+    id: "math_mistake_note",
+    title: "원인 분석형 오답 노트",
+    timeInfo: "틀린 문제 1문제당 5~10분",
+    pros: "비슷한 유형의 문제를 반복해서 틀리거나, 실수라고 착각하는 학생에게 최적!",
+    steps: [
+      "1. 문제 필사: 틀린 문제를 노트에 옮겨 적고, 자신이 풀었던 잘못된 과정을 그대로 씁니다.",
+      "2. 원인 분석: 틀린 이유를 구체적으로 적습니다 (예: '계산 실수'가 아니라 '부호 분배법칙 오류').",
+      "3. 핵심 개념: 이 문제를 풀기 위해 꼭 알아야 했던 핵심 개념을 한 줄로 정리합니다.",
+      "4. 재도전: 일주일 뒤 정답을 가리고 처음부터 끝까지 다시 풀어봅니다."
+    ],
+    emoji: "📐",
+    tags: ["오답노트", "실수방지", "개념연결"],
+    category: "math"
+  },
+  
+  // 사회
+  {
+    id: "social_mind_map",
+    title: "흐름 마인드맵",
+    timeInfo: "단원 종료 후 30분",
+    pros: "역사나 사회 과목의 방대한 사건과 개념들이 뒤섞이는 학생에게 최적!",
+    steps: [
+      "1. 백지 중앙에 핵심 시대나 단원명(예: 조선 후기 경제)을 적습니다.",
+      "2. 원인, 사건, 결과, 의의를 나뭇가지처럼 연결하며 시각적으로 정리합니다.",
+      "3. 각 가지 끝에는 교과서 그림이나 간단한 기호를 그려 넣어 우뇌 암기를 돕습니다."
+    ],
+    emoji: "🗺️",
+    tags: ["흐름파악", "암기력상승", "시각화"],
+    category: "social"
+  },
+  
+  // 과학
+  {
+    id: "science_qna",
+    title: "원리 탐구 Q&A 백문백답",
+    timeInfo: "개념 학습 후 20분",
+    pros: "결과나 공식만 무작정 외우다 응용문제에서 막히는 이과 지망생에게 최적!",
+    steps: [
+      "1. 교과서의 현상이나 공식에 대해 '왜 이렇게 될까?'라는 질문을 만듭니다 (예: '비행기는 어떻게 뜰까?').",
+      "2. 원리와 공식을 적용하여 과학적인 근거를 들어 답안을 작성해 봅니다.",
+      "3. 예상치 못한 예외 상황(예: '우주에서는 어떨까?')을 추가로 질문하여 사고를 확장합니다."
+    ],
+    emoji: "🔬",
+    tags: ["원리이해", "응용력발전", "호기심학습"],
+    category: "science"
   }
+];
 
-  return (
-    <div className="w-screen h-screen overflow-hidden bg-slate-900 font-sans text-gray-950 select-none relative">
-      
-      {/* Metaverse library map (Kept mounted for heartbeat & position persistence!) */}
-      {/* Background layer */}
-      <div className={`absolute inset-0 z-0 ${activeTab === "map" && seatedRoomId === null ? "block" : "hidden"}`}>
-        <LibraryMap
-          currentPoints={currentPoints}
-          addPoints={addPoints}
-          onSitDown={handleSitDown}
-          seatId={seatedRoomId}
-          accumulateTimeSec={accumulateTimeSec}
-        />
-      </div>
+export const INITIAL_QUESTS: Quest[] = [
+  {
+    id: "q-attendance",
+    title: "[이벤트] 매일 출석체크 1회",
+    description: "공부를 시작하기 전, 신성한 출석 도장을 누르고 10 포인트와 행운 보너스를 획득하세요.",
+    rewardPoints: 10,
+    isCompleted: false,
+    progress: "0/1일",
+    category: "attendance"
+  },
+  {
+    id: "q-homework",
+    title: "숙제 인증하고 검사 받기 (AI 칭찬과 피드백)",
+    description: "오늘 끝마친 수학/영어/국어 숙제를 카메라로 찍거나 풀이 사진을 업로드해 AI 튜터 소이에게 채점 받으면 보상이 주어집니다.",
+    rewardPoints: 30,
+    isCompleted: false,
+    progress: "0/1회",
+    category: "homework"
+  },
+  {
+    id: "q-timer-1",
+    title: "타이머 누적 1시간 돌파",
+    description: "책상에 앉아 1시간 이상 집중 공부를 달성하면 점수가 추가 부여됩니다.",
+    rewardPoints: 15,
+    isCompleted: false,
+    progress: "0/60분",
+    category: "timer"
+  },
+  {
+    id: "q-timer-2",
+    title: "타이머 누적 2시간 연속 기록",
+    description: "2시간 연속적인 공부를 단련하여 자기주도학습 최고 집중가로 등극하세요.",
+    rewardPoints: 25,
+    isCompleted: false,
+    progress: "0/120분",
+    category: "timer"
+  },
+  {
+    id: "q-timer-4",
+    title: "타이머 누적 4시간 열공 챌린지",
+    description: "스스로 시간 관리를 정교화하고 4시간 공부에 도달하여 대완성을 완성합니다.",
+    rewardPoints: 50,
+    isCompleted: false,
+    progress: "0/240분",
+    category: "timer"
+  },
+  {
+    id: "q-battle-bowl",
+    title: "공부 포인트 베팅! 1v1 구기 배틀 우승",
+    description: "공부하며 모은 리워드로 당구, 탁구, 볼링 등의 대결을 신청하여 승리를 맛보세요.",
+    rewardPoints: 20,
+    isCompleted: false,
+    progress: "0/1회",
+    category: "all"
+  }
+];
 
-      {/* Focused Study Room Mode - Full screen takeover */}
-      {seatedRoomId !== null && (
-        <div className="absolute inset-0 z-30 overflow-y-auto bg-[#faf8f5]">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key="seated-room"
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.98 }}
-              transition={{ duration: 0.23 }}
-              className="w-full min-h-screen"
-            >
-              <DeskStudyRoom
-                roomId={seatedRoomId}
-                isSecret={isSecretRoom}
-                onExit={handleStandUpAndExit}
-                addPoints={addPoints}
-                deductPoints={deductPoints}
-                accumulateTimeSec={accumulateTimeSec}
-                setAccumulateTimeSec={setAccumulateTimeSec}
-                currentPoints={currentPoints}
-                studyTimes={studyTimes}
-                setStudyTimes={setStudyTimes}
-              />
-            </motion.div>
-          </AnimatePresence>
-        </div>
-      )}
+export const BATTLE_OPPONENTS: BattleOpponent[] = [];
 
-      {/* UI Overlays Layer (Header, Navigation, Sub-tabs, Dashboard) */}
-      <div className={`absolute inset-0 z-20 pointer-events-none flex flex-col ${seatedRoomId !== null ? "hidden" : ""}`}>
-        
-        {/* Floating Top Nav Menu Toggle Button */}
-        <div className="pointer-events-auto absolute top-4 left-4 z-50 flex flex-col items-start gap-2">
-          <button
-            onClick={() => setShowNavMenu(!showNavMenu)}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white w-12 h-12 rounded-full flex justify-center items-center shadow-[0_5px_15px_-3px_rgba(79,70,229,0.5)] transition-transform hover:scale-110 active:scale-95 border-2 border-indigo-300 cursor-pointer"
-            title="메뉴"
-          >
-            {showNavMenu ? <X className="w-6 h-6" /> : <Plus className="w-6 h-6" />}
-          </button>
-
-          <AnimatePresence>
-            {showNavMenu && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9, y: -10 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: -10 }}
-                transition={{ duration: 0.2 }}
-                className="flex flex-col gap-2 bg-white/90 backdrop-blur-md border border-gray-200/60 p-3 rounded-2xl shadow-xl w-48 pointer-events-auto"
-              >
-                <button
-                  onClick={() => { handleTabSwitch("map"); setShowNavMenu(false); }}
-                  className={`py-2.5 px-4 text-xs font-black rounded-xl transition-all flex items-center gap-2 whitespace-nowrap active:scale-95 cursor-pointer
-                    ${activeTab === "map" && !seatedRoomId
-                      ? "bg-slate-900 text-white shadow" 
-                      : "text-gray-500 hover:bg-gray-50 bg-white"}`}
-                >
-                  <Compass className="w-4 h-4" /> 도서관 광장
-                </button>
-
-                <button
-                  onClick={() => { handleTabSwitch("attendance"); setShowNavMenu(false); }}
-                  className={`py-2.5 px-4 text-xs font-black rounded-xl transition-all flex items-center gap-2 whitespace-nowrap active:scale-95 cursor-pointer
-                    ${activeTab === "attendance" 
-                      ? "bg-slate-900 text-white shadow" 
-                      : "text-gray-500 hover:bg-gray-50 bg-white"}`}
-                >
-                  <Calendar className="w-4 h-4" /> 출석 체크
-                </button>
-
-                <button
-                  onClick={() => { handleTabSwitch("quests"); setShowNavMenu(false); }}
-                  className={`py-2.5 px-4 text-xs font-black rounded-xl transition-all flex items-center gap-2 whitespace-nowrap active:scale-95 cursor-pointer
-                    ${activeTab === "quests" 
-                      ? "bg-slate-900 text-white shadow" 
-                      : "text-gray-500 hover:bg-gray-50 bg-white"}`}
-                >
-                  <Target className="w-4 h-4" /> 일일 미션
-                </button>
-
-                <button
-                  onClick={() => { handleTabSwitch("methods"); setShowNavMenu(false); }}
-                  className={`py-2.5 px-4 text-xs font-black rounded-xl transition-all flex items-center gap-2 whitespace-nowrap active:scale-95 cursor-pointer
-                    ${activeTab === "methods" 
-                      ? "bg-slate-900 text-white shadow" 
-                      : "text-gray-500 hover:bg-gray-50 bg-white"}`}
-                >
-                  <BookOpen className="w-4 h-4" /> 추천 공부법
-                </button>
-                
-                <button
-                  onClick={() => { handleTabSwitch("bounty" as any); setShowNavMenu(false); }}
-                  className={`py-2.5 px-4 text-xs font-black rounded-xl transition-all flex items-center gap-2 whitespace-nowrap active:scale-95 cursor-pointer
-                    ${activeTab === "bounty" 
-                      ? "bg-stone-900 text-white shadow" 
-                      : "text-gray-500 hover:bg-gray-50 bg-white"}`}
-                >
-                  <span className="w-4 h-4 text-center">🔥</span> 지식 현상금
-                </button>
-
-                <button
-                  onClick={() => { handleTabSwitch("planner"); setShowNavMenu(false); }}
-                  className={`py-2.5 px-4 text-xs font-black rounded-xl transition-all flex items-center gap-2 whitespace-nowrap active:scale-95 cursor-pointer
-                    ${activeTab === "planner" 
-                      ? "bg-indigo-600 text-white shadow ring-2 ring-indigo-500" 
-                      : "text-indigo-600 hover:bg-indigo-50 bg-indigo-50 border border-indigo-200 animate-pulse"}`}
-                >
-                  <Sparkles className="w-4 h-4" /> AI 플래너
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Floating Top Right Stats Block */}
-        <div className="pointer-events-auto absolute top-4 right-4 z-50 flex items-center gap-2 flex-wrap justify-end">
-          <div className="flex items-center gap-2 text-xs bg-slate-100/90 backdrop-blur px-3.5 py-2 rounded-xl border border-slate-200 shadow-sm">
-            <Clock className="w-3.5 h-3.5 text-emerald-600" />
-            <span className="font-mono font-black text-emerald-700">
-              {totalMins}분 {totalSecs}초
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2 text-xs bg-amber-50/90 backdrop-blur border border-amber-200 px-3.5 py-2 rounded-xl text-amber-950 shadow-sm">
-            <Star className="w-4 h-4 text-amber-500 fill-amber-500 animate-spin-slow" />
-            <span className="font-bold">⭐ {currentPoints}</span>
-          </div>
-        </div>
-
-        {/* Sub-tabs Content Area Overlay */}
-        <div className="flex-1 w-full max-w-7xl mx-auto px-4 mt-6 overflow-y-auto no-scrollbar pb-12">
-          {activeTab !== "map" && (
-            <div className="pointer-events-auto bg-white/95 backdrop-blur shadow-2xl rounded-3xl p-4 sm:p-6 mb-12 border border-slate-200">
-              <AnimatePresence mode="wait">
-                
-                {/* Attendance checklist scheduler */}
-                {activeTab === "attendance" && (
-                  <motion.div
-                    key="attendance-tab"
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -15 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <AttendanceCheck
-                      currentPoints={currentPoints}
-                      addPoints={addPoints}
-                      onBack={() => setActiveTab("map")}
-                    />
-                  </motion.div>
-                )}
-
-                {/* Day quotas and homework check UI */}
-                {activeTab === "quests" && (
-                  <motion.div
-                    key="quests-tab"
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -15 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <QuestsList
-                      currentPoints={currentPoints}
-                      addPoints={addPoints}
-                      onBack={() => setActiveTab("map")}
-                      accumulateTimeSec={accumulateTimeSec}
-                    />
-                  </motion.div>
-                )}
-
-                {/* Smart study methods library */}
-                {activeTab === "methods" && (
-                  <motion.div
-                    key="methods-tab"
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -15 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <StudyMethods
-                      onBack={() => setActiveTab("map")}
-                      addPoints={addPoints}
-                    />
-                  </motion.div>
-                )}
-
-                {/* Knowledge Bounty */}
-                {activeTab === "bounty" && (
-                  <motion.div
-                    key="bounty-tab"
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -15 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <KnowledgeBounty
-                      currentPoints={currentPoints}
-                      addPoints={addPoints}
-                      deductPoints={deductPoints}
-                    />
-                  </motion.div>
-                )}
-
-                {/* AI Study Planner */}
-                {activeTab === "planner" && (
-                  <motion.div
-                    key="planner-tab"
-                    initial={{ opacity: 0, y: 15 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -15 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <AiPlanner
-                      currentPoints={currentPoints}
-                      addPoints={addPoints}
-                      onBack={() => setActiveTab("map")}
-                      studyTimes={studyTimes}
-                    />
-                  </motion.div>
-                )}
-
-              </AnimatePresence>
-            </div>
-          )}
-        </div>
-
-
-
-
-
-      </div>
-    </div>
-  );
-}
+export const BATTLE_SPORTS: BattleSport[] = [
+  {
+    id: "billiards",
+    name: "당구",
+    emoji: "🎱",
+    description: "각도 설계와 쿠션 계산을 통해 물리적 두뇌전을 겨룹니다. 공부 타이머 누적 시간이 길수록 명중률이 올라갑니다!",
+    miniGameRule: "게이지 힘 조절과 수구 겨냥을 통한 리바운드 게임입니다.",
+    baseWinRate: 0.5
+  },
+  {
+    id: "pingpong",
+    name: "탁구",
+    emoji: "🏓",
+    description: "순반사 신경과 공 소통 지렛대 경기입니다. 자율 집중 연속 출석 리워드가 많은 쪽이 패스의 정확도가 높아집니다.",
+    miniGameRule: "상대방의 회전 공격 서브를 좌우 반사적으로 받아쳐 랠리를 지켜냅니다.",
+    baseWinRate: 0.6
+  },
+  {
+    id: "bowling",
+    name: "볼링",
+    emoji: "🎳",
+    description: "집중된 밸런스 점수를 얻는 스트라이크 한판! 숙제 통과 누적 도장을 보유할수록 정중앙 화살표 핀 적중 확률이 대폭 상승합니다.",
+    miniGameRule: "좌우로 빠르게 요동치는 조준 핀에 맞춰 적확한 타이밍에 볼을 발사합니다.",
+    baseWinRate: 0.55
+  },
+  {
+    id: "golf",
+    name: "골프",
+    emoji: "⛳",
+    description: "바람의 세기와 경사면을 세심화하며 섬세이 퍼팅을 성공시킵니다. 차분한 뽀모도로 명상가 전용 스포츠 스포츠.",
+    miniGameRule: "거친 필드에서 거리를 재어 퍼포먼스 포인트를 조절하고 홀컵 인을 완도합니다.",
+    baseWinRate: 0.45
+  },
+  {
+    id: "tennis",
+    name: "테니스",
+    emoji: "🎾",
+    description: "활력 넘치는 네트 플레이와 강력한 서브 타격전입니다. 실시간 방 소통 활발가들이 유리합니다.",
+    miniGameRule: "네트로 높게 치구해 튕겨가는 타격 포인트를 퀵 체킹하여 점수를 모읍니다.",
+    baseWinRate: 0.5
+  },
+  {
+    id: "badminton",
+    name: "배드민턴",
+    emoji: "🏸",
+    description: "셔틀콕의 현란한 활강과 고공 스매시가 번뜩입니다. 1시간 공부 마일리지 중첩률에 추가 공격력이 부여됩니다.",
+    miniGameRule: "떨어지는 셔틀콕에 부합하는 사분면 격자 터치 타이밍 게임입니다.",
+    baseWinRate: 0.65
+  }
+];
